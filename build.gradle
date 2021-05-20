@@ -68,7 +68,7 @@ configurations {
     deployerJars // maven stuff
     asm // renamer input
     jarjar // renamer task
-    
+
     // Exclude non-repackaged ASM so that we don't use it by mistake
     compile.exclude module: 'asm-debug-all'
 }
@@ -105,11 +105,12 @@ dependencies {
 
 // Task to read ASM library and rename packages
 task renamedASM {
-    outputs.file files(configurations.asm.files.withIndex().collect { file, i -> def dep = configurations.asm.dependencies[i]
+    outputs.file files(configurations.asm.files.withIndex().collect { file, i ->
+        def dep = configurations.asm.dependencies[i]
         new File(new File(renamedPackageRoot, "org/spongepowered/mixin-" + dep.name + "/" + dep.version), "mixin-" + file.name).path
     })
     ant {
-        taskdef (
+        taskdef(
             name: "jarjar",
             classname: "com.tonicsystems.jarjar.JarJarTask",
             classpath: configurations.jarjar.asPath,
@@ -122,36 +123,50 @@ task renamedASM {
                 def rootOld = new File(tmpDir, "org/objectweb")
                 def tmpOld = new File(rootOld, "asm")
                 def tmpNew = new File(tmpDir, "org/spongepowered/asm/lib")
-                unzip (src: inJar, dest: tmpDir)
-                replace (dir: tmpDir, token: "org.objectweb.asm", value: "org.spongepowered.asm.lib")
-                move (file: tmpOld, tofile: tmpNew)
+                unzip(src: inJar, dest: tmpDir)
+                replace(dir: tmpDir, token: "org.objectweb.asm", value: "org.spongepowered.asm.lib")
+                move(file: tmpOld, tofile: tmpNew)
                 delete rootOld
-                jar (destFile: new File(elem.path)) { fileset(dir: tmpDir) }
+                jar(destFile: new File(elem.path)) { fileset(dir: tmpDir) }
                 delete tmpDir
             } else {
-                jarjar (jarfile: elem.path) {
-                    zipfileset (src: inJar)
-                    rule (
+                jarjar(jarfile: elem.path) {
+                    zipfileset(src: inJar)
+                    rule(
                         pattern: "org.objectweb.asm.**",
                         result: "org.spongepowered.asm.lib.@1"
                     )
                 }
             }
         }
+
+        def file = new File(project.baseDir, "build/renamed-packages/org/spongepowered/mixin-asm-debug-all/5.2/mixin-asm-debug-all-5.2.pom")
+        file.createNewFile()
+
+        def fos = new FileOutputStream(file)
+        def fis = new FileInputStream(new File(project.baseDir, "renamer/template.pom"))
+        def buffer = new byte[1024]
+
+        int read
+
+        while ((read = fis.read(buffer, 0, buffer.length)) != -1) {
+            fos.write(buffer, 0, read)
+        }
     }
-    
+
+
     project.dependencies.add('compile', 'org.spongepowered:mixin-asm-debug-all:5.2')
     project.dependencies.add('apCompile', 'org.spongepowered:mixin-asm-debug-all:5.2')
     project.dependencies.add('agentCompile', 'org.spongepowered:mixin-asm-debug-all:5.2')
 
+    eclipseClasspath.dependsOn(renamedASM)
 }
-eclipseClasspath.dependsOn(renamedASM)
 
 // Project dependencies
 dependencies {
     def guava = 'com.google.guava:guava:17.0'
     def log4j2 = 'org.apache.logging.log4j:log4j-core:2.0-beta9'
-    
+
     compile guava
     compile log4j2
     compile 'commons-io:commons-io:2.4'
@@ -162,10 +177,10 @@ dependencies {
 //    testCompile 'junit:junit:4.11'
 //    testCompile 'org.hamcrest:hamcrest-library:1.3'
 //    testCompile 'org.mockito:mockito-core:1.9.0'
-    
+
     // Annotation Processor
     apCompile guava
-    
+
     // AP extension example
     exampleCompile configurations.compile
 
@@ -181,10 +196,10 @@ dependencies {
     launchwrapperCompile('net.minecraft:launchwrapper:1.11') {
         exclude module: 'lwjgl'
     }
-    
+
     // agent
     agentCompile configurations.compile
-    
+
     // asm bridge
     bridgeCompile log4j2
     bridgeCompile 'org.ow2.asm:asm-commons:5.0.3'
@@ -207,7 +222,7 @@ idea.module.scopes.COMPILE.plus += [
 // Filter, process, and include resources
 processResources {
     // Include in final JAR
-   from 'LICENSE.txt'
+    from 'LICENSE.txt'
 }
 
 // License header formatting
@@ -255,19 +270,19 @@ if (JavaVersion.current().isJava8Compatible()) {
 jar {
     // Include annotation processor
     from sourceSets.ap.output
-    
+
     // Include fernflower bridge
     from sourceSets.fernflower.output
 
     // Include hotswap agent
     from sourceSets.agent.output
-    
+
     // Bridge
     from sourceSets.bridge.output
-    
+
     // Launchwrapper
     from sourceSets.launchwrapper.output
-    
+
     // Renamed ASM
     from zipTree(tasks.renamedASM.outputs.files[0]).matching {
         include 'org/spongepowered/asm/lib/*'
@@ -278,9 +293,9 @@ jar {
         include 'org/spongepowered/asm/lib/tree/**'
         include 'org/spongepowered/asm/lib/util/**'
     }
-    
+
     exclude 'org/objectweb/**'
-    
+
     // JAR manifest configuration
     manifest.mainAttributes(
         "Built-By": System.properties['user.name'],
@@ -304,7 +319,7 @@ task thinJar(type: Jar) {
     from sourceSets.main.output
     from zipTree(tasks.renamedASM.outputs.files[0])
     classifier = 'thin'
-    
+
     exclude 'org/objectweb/**'
     exclude 'org/spongepowered/asm/lib/commons/**'
     exclude 'org/spongepowered/asm/lib/signature/**'
@@ -315,7 +330,7 @@ task thinJar(type: Jar) {
     exclude 'org/spongepowered/asm/mixin/transformer/*.class'
     exclude 'org/spongepowered/asm/mixin/transformer/debug/**'
     exclude 'org/spongepowered/asm/mixin/transformer/verify/**'
-    
+
     manifest.mainAttributes(
         "Built-By": System.properties['user.name'],
         "Created-By": System.properties['java.vm.version'] + " (" + System.properties['java.vm.vendor'] + ")",
@@ -327,7 +342,7 @@ task thinJar(type: Jar) {
 build.dependsOn(thinJar)
 
 // generate shadow jar so we can use the AP standalone
-shadowJar  {
+shadowJar {
     from sourceSets.ap.output
     exclude 'META-INF/*.DSA'
     exclude 'META-INF/*.RSA'
@@ -378,24 +393,24 @@ task timestamp(type: Jar, dependsOn: build) {
 }
 
 task sourceJar(type: Jar) {
-	from sourceSets.main.java
-	from sourceSets.main.resources
-	from sourceSets.ap.java
-	from sourceSets.ap.resources
-	from sourceSets.fernflower.java
-	from sourceSets.fernflower.resources
+    from sourceSets.main.java
+    from sourceSets.main.resources
+    from sourceSets.ap.java
+    from sourceSets.ap.resources
+    from sourceSets.fernflower.java
+    from sourceSets.fernflower.resources
     from sourceSets.agent.java
     from sourceSets.agent.resources
     from sourceSets.bridge.java
     from sourceSets.bridge.resources
     from sourceSets.example.java
     from sourceSets.example.resources
-	classifier = "sources"
+    classifier = "sources"
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-	from javadoc.destinationDir
-	classifier = "javadoc"
+    from javadoc.destinationDir
+    classifier = "javadoc"
 }
 
 artifacts {
