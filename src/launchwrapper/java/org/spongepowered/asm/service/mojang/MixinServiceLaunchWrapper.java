@@ -312,9 +312,9 @@ public class MixinServiceLaunchWrapper implements IMixinService, IClassProvider,
         if (classBytes != null) {
             return classBytes;
         }
-        
-        URLClassLoader appClassLoader = (URLClassLoader)Launch.class.getClassLoader();
-        
+
+        ClassLoader appClassLoader = Launch.class.getClassLoader();
+
         InputStream classStream = null;
         try {
             final String resourcePath = transformedName.replace('.', '/').concat(".class");

@@ -5,7 +5,7 @@ buildscript {
     }
     dependencies {
         classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
     }
 }
 
@@ -43,8 +43,8 @@ ext.renamedPackageRoot = new File("build/renamed-packages/")
 ext.doSignJar = project.hasProperty("keyStorePath")
 
 // Minimum version of Java required
-sourceCompatibility = '1.6'
-targetCompatibility = '1.6'
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
 
 // Project repositories
 repositories {
